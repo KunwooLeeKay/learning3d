@@ -76,6 +76,17 @@ def optimize_mesh_texture(
     # create a list of query cameras as the training set
     # Note: to create the dataset, you can either pre-define a list of query cameras as below or randomly sample a camera pose on the fly in the training loop.
     query_cameras = [] # optional
+    azims = torch.linspace(0, 360, n_views)
+    n_views = 30
+    for i in range(n_views):
+        rand_dist = torch.randint(4, 6, (1,)).item()
+        rand_elev = torch.randint(15, 25, (1,)).item()
+        R, T = pytorch3d.rendererlook_at_view_transform(
+            dist = rand_dist, azim = azims[i], elev = rand_elev, up=((0, 1, 0),))
+        camera = pytorch3d.renderer.FoVPerspectiveCameras(
+            fov=60, R=R, T=T, device=device
+        )
+        query_cameras.append(camera)
 
     # Step 4. Create optimizer training parameters
     optimizer = torch.optim.AdamW(color_field.parameters(), lr=5e-4, weight_decay=0)
@@ -92,15 +103,14 @@ def optimize_mesh_texture(
         mesh.textures = TexturesVertex(verts_features=color_field(vertices))
 
         ### YOUR CODE HERE ###
-
         # Forward pass
         # Render a randomly sampled camera view to optimize in this iteration
-        rend = 
+        cam_idx = torch.randint(0, n_views, size=(1,))
+        rend = renderer(mesh, cameras=query_cameras[cam_idx], lights=lights)[..., :3]
         # Encode the rendered image to latents
-        latents = 
+        latents = sds.encode_imgs(rend.permute(0, 3, 1, 2))
         # Compute the loss
-        loss =
-
+        loss = sds.sds_loss(latents, embeddings['default'], embeddings['uncond'])
 
 
         # Backward pass

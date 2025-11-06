@@ -164,8 +164,8 @@ def optimize_nerf(
 
   
             ### YOUR CODE HERE ###
-            latents = 
-            loss = 
+            latents = sds.encode_imgs(pred_rgb)
+            loss = sds.sds_loss(latents, text_cond, text_uncond)
 
             # regularizations
             if args.lambda_entropy > 0:
@@ -301,10 +301,10 @@ if __name__ == "__main__":
     ### YOUR CODE HERE ###
     # You wil need to tune the following parameters to obtain good NeRF results
     ### regularizations
-    parser.add_argument('--lambda_entropy', type=float, default=0, help="loss scale for alpha entropy")
-    parser.add_argument('--lambda_orient', type=float, default=0, help="loss scale for orientation")
+    parser.add_argument('--lambda_entropy', type=float, default=1e-3, help="loss scale for alpha entropy")
+    parser.add_argument('--lambda_orient', type=float, default=1e-3, help="loss scale for orientation")
     ### shading options
-    parser.add_argument('--latent_iter_ratio', type=float, default=0, help="training iters that only use albedo shading")
+    parser.add_argument('--latent_iter_ratio', type=float, default=0.1, help="training iters that only use albedo shading")
 
 
     parser.add_argument(
