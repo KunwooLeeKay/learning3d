@@ -82,7 +82,7 @@ def optimize_mesh_texture(
     for i in range(n_views):
         rand_dist = torch.randint(4, 6, (1,)).item()
         rand_elev = torch.randint(15, 25, (1,)).item()
-        R, T = pytorch3d.rendererlook_at_view_transform(
+        R, T = pytorch3d.renderer.look_at_view_transform(
             dist = rand_dist, azim = azims[i], elev = rand_elev, up=((0, 1, 0),))
         camera = pytorch3d.renderer.FoVPerspectiveCameras(
             fov=60, R=R, T=T, device=device
