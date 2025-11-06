@@ -42,7 +42,7 @@ def poisson_mesh_reconstruction(points, normals=None):
 
 
 def decimate_mesh(
-    verts, faces, target, backend="pymeshlab", remesh=False, optimalplacement=True
+    verts, faces, target, backend="pyfqmr", remesh=False, optimalplacement=True
 ):
     # optimalplacement: default is True, but for flat mesh must turn False to prevent spike artifect.
 
