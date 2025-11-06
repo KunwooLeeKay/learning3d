@@ -75,9 +75,10 @@ def optimize_mesh_texture(
     ### YOUR CODE HERE ###
     # create a list of query cameras as the training set
     # Note: to create the dataset, you can either pre-define a list of query cameras as below or randomly sample a camera pose on the fly in the training loop.
+    n_views = 30
+
     query_cameras = [] # optional
     azims = torch.linspace(0, 360, n_views)
-    n_views = 30
     for i in range(n_views):
         rand_dist = torch.randint(4, 6, (1,)).item()
         rand_elev = torch.randint(15, 25, (1,)).item()
