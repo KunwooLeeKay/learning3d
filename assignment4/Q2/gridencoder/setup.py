@@ -5,14 +5,20 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 _src_path = os.path.dirname(os.path.abspath(__file__))
 
 nvcc_flags = [
-    '-O3', '-std=c++14',
-    '-U__CUDA_NO_HALF_OPERATORS__', '-U__CUDA_NO_HALF_CONVERSIONS__', '-U__CUDA_NO_HALF2_OPERATORS__',
+    "-O3",
+    "-std=c++17",                         # ← was c++14
+    "--expt-relaxed-constexpr",
+    "--expt-extended-lambda",
+    "-U__CUDA_NO_HALF_OPERATORS__",
+    "-U__CUDA_NO_HALF_CONVERSIONS__",
+    "-U__CUDA_NO_HALF2_OPERATORS__",
 ]
 
 if os.name == "posix":
-    c_flags = ['-O3', '-std=c++14']
+    c_flags = ["-O3", "-std=gnu++17"]     # ← was c++14
 elif os.name == "nt":
-    c_flags = ['/O2', '/std:c++17']
+    c_flags = ["/O2", "/std:c++17"]
+    ...
 
     # find cl.exe
     def find_cl_path():
