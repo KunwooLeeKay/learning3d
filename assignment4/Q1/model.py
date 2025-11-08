@@ -81,6 +81,7 @@ class Gaussians:
     def _load_gaussians(self, ply_path: str):
 
         data = dict()
+        print(f"Loading gaussians from {ply_path}...")
         ply_gaussians = load_gaussians_from_ply(ply_path)
 
         data["means"] = torch.tensor(ply_gaussians["xyz"])
