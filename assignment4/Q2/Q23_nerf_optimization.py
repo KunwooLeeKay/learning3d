@@ -14,7 +14,7 @@ from optimizer import Adan
 from PIL import Image
 from SDS import SDS
 from utils import prepare_embeddings, seed_everything
-
+import torchvision
 
 def optimize_nerf(
     sds,
@@ -164,6 +164,7 @@ def optimize_nerf(
 
   
             ### YOUR CODE HERE ###
+            pred_rgb = torchvision.transforms.Resize(size=(512, 512))(pred_rgb)
             latents = sds.encode_imgs(pred_rgb)
             loss = sds.sds_loss(latents, text_cond, text_uncond)
 
