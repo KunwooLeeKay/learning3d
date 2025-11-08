@@ -276,14 +276,14 @@ def optimize_nerf(
             all_preds = np.stack(all_preds, axis=0)
             all_preds_depth = np.stack(all_preds_depth, axis=0)
             # save the video
-            imageio.mimwrite(
+            imageio.mimsave(
                 os.path.join(sds.output_dir, "videos", f"rgb_ep_{epoch}.mp4"),
                 all_preds,
                 fps=25,
                 quality=8,
                 macro_block_size=1,
             )
-            imageio.mimwrite(
+            imageio.mimsave(
                 os.path.join(sds.output_dir, "videos", f"depth_ep_{epoch}.mp4"),
                 all_preds_depth,
                 fps=25,
