@@ -4,7 +4,7 @@ import os.path as osp
 import random
 import time
 
-import imageio
+import imageio.v2 as imageio
 import numpy as np
 import torch
 from nerf.config_parser import add_config_arguments
