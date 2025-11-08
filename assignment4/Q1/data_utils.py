@@ -193,22 +193,114 @@ def load_gaussians_from_ply(path):
     }
     return output
 
-def colours_from_spherical_harmonics(spherical_harmonics, gaussian_dirs):
+import torch
+
+def colours_from_spherical_harmonics(spherical_harmonics: torch.Tensor,
+                                     gaussian_dirs: torch.Tensor) -> torch.Tensor:
     """
-    [Q 1.3.1] Computes view-dependent colour given spherical harmonic coefficients
-    and direction vectors for each gaussian.
+    Computes view-dependent colour given spherical harmonic coefficients
+    and direction vectors for each Gaussian.
 
     Args:
-        spherical_harmonics     :   A torch.Tensor of shape (N, 48) representing the
-                                    spherical harmonic coefficients.
-        gaussian_dirs           :   A torch.Tensor of shape (N, 3) representing the
-                                    direction vectors pointing from the camera origin
-                                    to each Gaussian.
+        spherical_harmonics : (N, 48) SH coefficients (16 coefficients × 3 channels)
+        gaussian_dirs       : (N, 3) direction vectors from camera to Gaussian
 
     Returns:
-        colours                 :   A torch.Tensor of shape (N, 3) representing the view dependent
-                                    RGB colour.
+        colours             : (N, 3) RGB in [0, 1]
     """
-    ### YOUR CODE HERE ###
-    colours = None
+
+    device = spherical_harmonics.device
+    sh = spherical_harmonics.view(-1, 16, 3)  # (N, 16, 3)
+
+    # ---- Spherical harmonic constants ----
+    SH0 = 0.282095  # Y_0^0
+
+    # l = 1
+    SH1 = 0.488603  # all l=1 terms share this scale
+
+    # l = 2
+    C2 = torch.tensor(
+        [ 1.092548,  # xy
+         -1.092548,  # yz
+          0.315392,  # 2z^2 - x^2 - y^2
+         -1.092548,  # xz
+          0.546274], # x^2 - y^2
+        device=device
+    )
+
+    # l = 3
+    C3 = torch.tensor(
+        [-0.590044,  # y (3x^2 - y^2)
+          2.890611,  # xyz
+         -0.457046,  # y (4z^2 - x^2 - y^2)
+          0.373176,  # z (2z^2 - 3x^2 - 3y^2)
+         -0.457046,  # x (4z^2 - x^2 - y^2)
+          1.445306,  # z (x^2 - y^2)
+         -0.590044], # x (x^2 - 3y^2)
+        device=device
+    )
+
+    # ---- Directions and monomials ----
+    x = gaussian_dirs[:, 0]
+    y = gaussian_dirs[:, 1]
+    z = gaussian_dirs[:, 2]
+
+    xx, yy, zz = x * x, y * y, z * z
+    xy, yz, xz = x * y, y * z, x * z
+
+    # ---- 0th order ----
+    c0 = sh[:, 0]                          # (N, 3)
+    colour = SH0 * c0                      # (N, 3)
+
+    # ---- 1st order (3 coeffs: c1, c2, c3) ----
+    c1 = sh[:, 1]
+    c2 = sh[:, 2]
+    c3 = sh[:, 3]
+
+    colour = (
+        colour
+        - SH1 * y.unsqueeze(-1) * c1
+        + SH1 * z.unsqueeze(-1) * c2
+        - SH1 * x.unsqueeze(-1) * c3
+    )
+
+    # ---- 2nd order (5 coeffs: c4..c8) ----
+    c4  = sh[:, 4]
+    c5  = sh[:, 5]
+    c6  = sh[:, 6]
+    c7  = sh[:, 7]
+    c8  = sh[:, 8]
+
+    colour = (
+        colour
+        + C2[0] * (xy).unsqueeze(-1)                      * c4
+        + C2[1] * (yz).unsqueeze(-1)                      * c5
+        + C2[2] * (2.0 * zz - xx - yy).unsqueeze(-1)      * c6
+        + C2[3] * (xz).unsqueeze(-1)                      * c7
+        + C2[4] * (xx - yy).unsqueeze(-1)                 * c8
+    )
+
+    # ---- 3rd order (7 coeffs: c9..c15) ----
+    c9  = sh[:,  9]
+    c10 = sh[:, 10]
+    c11 = sh[:, 11]
+    c12 = sh[:, 12]
+    c13 = sh[:, 13]
+    c14 = sh[:, 14]
+    c15 = sh[:, 15]
+
+    colour = (
+        colour
+        + C3[0] * (y * (3.0 * xx - yy)).unsqueeze(-1)                 * c9
+        + C3[1] * (xy * z).unsqueeze(-1)                              * c10
+        + C3[2] * (y * (4.0 * zz - xx - yy)).unsqueeze(-1)            * c11
+        + C3[3] * (z * (2.0 * zz - 3.0 * xx - 3.0 * yy)).unsqueeze(-1)* c12
+        + C3[4] * (x * (4.0 * zz - xx - yy)).unsqueeze(-1)            * c13
+        + C3[5] * (z * (xx - yy)).unsqueeze(-1)                       * c14
+        + C3[6] * (x * (xx - 3.0 * yy)).unsqueeze(-1)                 * c15
+    )
+
+    # Shift & clamp like your original
+    colours = torch.clamp(colour + 0.5, 0.0, 1.0)
+
     return colours
