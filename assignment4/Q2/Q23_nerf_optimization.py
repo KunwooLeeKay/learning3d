@@ -160,13 +160,24 @@ def optimize_nerf(
                 text_cond = embeddings["default"]
             else:
                 ### YOUR CODE HERE ###
-                pass
+                text_front = embeddings["front"]
+                text_side = embeddings["side"]
+                text_back = embeddings["back"]
+                text_cond = embeddings["default"]
 
   
             ### YOUR CODE HERE ###
             pred_rgb = torchvision.transforms.Resize(size=(512, 512))(pred_rgb)
             latents = sds.encode_imgs(pred_rgb)
-            loss = sds.sds_loss(latents, text_cond, text_uncond)
+            # loss = sds.sds_loss(latents, text_cond, text_uncond)
+            if not args.view_dep_text:
+              loss = sds.sds_loss(latents, text_cond, text_embeddings_uncond=text_uncond)
+            else:
+              loss_front = sds.sds_loss(latents, text_front, text_embeddings_uncond=text_uncond)
+              loss_side = sds.sds_loss(latents, text_side, text_embeddings_uncond=text_uncond)
+              loss_back = sds.sds_loss(latents, text_back, text_embeddings_uncond=text_uncond)
+              loss_cond = sds.sds_loss(latents, text_cond, text_embeddings_uncond=text_uncond)
+              loss = loss_front + loss_side + loss_back + loss_cond
 
             # regularizations
             if args.lambda_entropy > 0:
